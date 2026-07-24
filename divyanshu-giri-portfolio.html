@@ -1,0 +1,649 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Divyanshu Giri — Player Profile</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+:root{
+  --bg:#0b0e14;
+  --panel:#12161f;
+  --panel-raised:#171c27;
+  --line:#262c3a;
+  --gold:#f2b705;
+  --gold-dim:#8a6c1c;
+  --ember:#ff6b4a;
+  --text:#e9e7e0;
+  --muted:#8892a6;
+  --hp:#4ade80;
+}
+
+*{margin:0;padding:0;box-sizing:border-box;}
+html{scroll-behavior:smooth;}
+body{
+  background:var(--bg);
+  color:var(--text);
+  font-family:'Space Grotesk', sans-serif;
+  line-height:1.6;
+  overflow-x:hidden;
+  cursor:crosshair;
+}
+body::before{
+  content:"";
+  position:fixed; inset:0;
+  background-image:
+    linear-gradient(var(--line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--line) 1px, transparent 1px);
+  background-size:34px 34px;
+  opacity:0.12;
+  pointer-events:none;
+  z-index:0;
+}
+/* HUD scanline sweep */
+body::after{
+  content:"";
+  position:fixed; inset:0;
+  background:linear-gradient(180deg, transparent 0%, rgba(242,183,5,0.035) 50%, transparent 100%);
+  background-size:100% 6px;
+  pointer-events:none;
+  z-index:2;
+  mix-blend-mode:overlay;
+}
+/* corner-bracket HUD frame, used on hero card + panels */
+.hud-corners{position:relative;}
+.hud-corners::before,
+.hud-corners::after{
+  content:""; position:absolute; width:16px; height:16px;
+  border-color:var(--gold); border-style:solid; pointer-events:none;
+}
+.hud-corners::before{top:-1px; left:-1px; border-width:2px 0 0 2px;}
+.hud-corners::after{bottom:-1px; right:-1px; border-width:0 2px 2px 0;}
+.hud-corners .hc-tr, .hud-corners .hc-bl{
+  content:""; position:absolute; width:16px; height:16px;
+  border-color:var(--gold); border-style:solid; pointer-events:none;
+}
+.hc-tr{top:-1px; right:-1px; border-width:2px 2px 0 0;}
+.hc-bl{bottom:-1px; left:-1px; border-width:0 0 2px 2px;}
+.pixel{font-family:'Press Start 2P', monospace;}
+.mono{font-family:'JetBrains Mono', monospace;}
+a{color:inherit;text-decoration:none;}
+::selection{background:var(--gold);color:#111;}
+
+/* focus visibility */
+a:focus-visible, button:focus-visible{
+  outline:2px solid var(--gold);
+  outline-offset:3px;
+}
+
+/* ---------- NAV ---------- */
+nav{
+  position:sticky; top:0; z-index:50;
+  display:flex; align-items:center; justify-content:space-between;
+  padding:18px clamp(20px,5vw,64px);
+  background:rgba(11,14,20,0.85);
+  backdrop-filter:blur(8px);
+  border-bottom:1px solid var(--line);
+}
+.logo{
+  font-family:'Press Start 2P', monospace;
+  font-size:13px;
+  color:var(--gold);
+  letter-spacing:1px;
+}
+.logo span{color:var(--text);}
+.nav-links{display:flex; gap:clamp(14px,3vw,32px); font-size:14px;}
+.nav-links a{
+  color:var(--muted);
+  position:relative;
+  padding:4px 2px;
+  transition:color .2s;
+}
+.nav-links a:hover{color:var(--gold);}
+.nav-links a::after{
+  content:"";
+  position:absolute; left:0; bottom:-4px;
+  width:0; height:2px; background:var(--gold);
+  transition:width .2s;
+}
+.nav-links a:hover::after{width:100%;}
+.nav-toggle{display:none;}
+
+/* ---------- HERO ---------- */
+.hero{
+  position:relative; z-index:1;
+  min-height:92vh;
+  display:flex; align-items:center;
+  padding:80px clamp(20px,5vw,64px) 60px;
+}
+.hero-grid{
+  display:grid;
+  grid-template-columns:1.2fr 0.8fr;
+  gap:48px;
+  width:100%;
+  align-items:center;
+}
+.eyebrow{
+  display:inline-flex; align-items:center; gap:10px;
+  font-family:'Press Start 2P', monospace;
+  font-size:10px;
+  color:var(--hp);
+  margin-bottom:22px;
+}
+.eyebrow::before{
+  content:"";
+  width:8px;height:8px;background:var(--hp);
+  box-shadow:0 0 8px var(--hp);
+  animation:blink 1.4s infinite steps(2);
+}
+@keyframes blink{50%{opacity:0.15;}}
+
+h1{
+  font-size:clamp(38px, 6vw, 68px);
+  line-height:1.05;
+  font-weight:700;
+  margin-bottom:18px;
+}
+h1 .accent{color:var(--gold);}
+.role-line{
+  font-family:'JetBrains Mono', monospace;
+  color:var(--muted);
+  font-size:clamp(14px,2vw,17px);
+  margin-bottom:28px;
+  border-left:3px solid var(--ember);
+  padding-left:14px;
+}
+.hero-summary{
+  max-width:52ch;
+  color:#c7cad4;
+  font-size:16px;
+  margin-bottom:34px;
+}
+.cta-row{display:flex; gap:16px; flex-wrap:wrap;}
+.btn{
+  display:inline-flex; align-items:center; gap:8px;
+  padding:14px 26px;
+  font-family:'Space Grotesk';
+  font-weight:600; font-size:15px;
+  border:2px solid transparent;
+  cursor:pointer;
+  transition:transform .15s ease, box-shadow .15s ease, background .15s ease;
+}
+.btn-primary{
+  background:var(--gold); color:#12161f;
+  box-shadow:4px 4px 0 var(--gold-dim);
+}
+.btn-primary:hover{transform:translate(-2px,-2px); box-shadow:6px 6px 0 var(--gold-dim);}
+.btn-ghost{
+  border-color:var(--line); color:var(--text);
+}
+.btn-ghost:hover{border-color:var(--gold); color:var(--gold);}
+
+/* character card */
+.char-card{
+  background:linear-gradient(180deg, var(--panel-raised), var(--panel));
+  border:1px solid var(--line);
+  padding:26px;
+  position:relative;
+}
+.char-card::before{
+  content:"PLAYER CARD";
+  position:absolute; top:-11px; left:20px;
+  background:var(--bg);
+  padding:0 10px;
+  font-family:'Press Start 2P', monospace;
+  font-size:9px;
+  color:var(--gold);
+}
+.avatar-frame{
+  width:100%; aspect-ratio:1/1;
+  border:2px solid var(--gold);
+  display:flex; align-items:center; justify-content:center;
+  background:#0d1119;
+  margin-bottom:18px;
+  position:relative;
+  overflow:hidden;
+}
+.avatar-photo{
+  width:100%; height:100%; object-fit:cover;
+  filter:grayscale(0.25) contrast(1.08);
+}
+.reticle{
+  position:absolute; inset:0; pointer-events:none;
+}
+.reticle-line{position:absolute; background:rgba(242,183,5,0.75);}
+.reticle-h{top:50%; left:0; right:0; height:1px;}
+.reticle-v{left:50%; top:0; bottom:0; width:1px;}
+.reticle-ring{
+  position:absolute; top:50%; left:50%;
+  width:64px; height:64px;
+  border:1.5px solid var(--gold);
+  border-radius:50%;
+  transform:translate(-50%,-50%);
+  box-shadow:0 0 0 1px rgba(0,0,0,0.4);
+}
+.reticle-ring::before, .reticle-ring::after{
+  content:""; position:absolute; background:var(--gold);
+}
+.reticle-ring::before{top:50%; left:-14px; width:10px; height:1.5px; transform:translateY(-50%);}
+.reticle-ring::after{top:50%; right:-14px; width:10px; height:1.5px; transform:translateY(-50%);}
+.scope-tag{
+  position:absolute; bottom:8px; left:8px;
+  font-size:10px; letter-spacing:1px;
+  color:var(--hp); background:rgba(0,0,0,0.55);
+  padding:3px 8px; border:1px solid var(--hp);
+}
+.ammo-readout{
+  margin-top:22px; font-size:12px; color:var(--muted);
+  letter-spacing:.5px;
+  border-top:1px dashed var(--line);
+  padding-top:14px;
+}
+.char-name{font-weight:700; font-size:20px; margin-bottom:2px;}
+.char-title{color:var(--muted); font-size:13px; margin-bottom:16px;}
+.stat-row{display:flex; justify-content:space-between; font-size:12px; margin-bottom:6px; color:var(--muted);}
+.bar-track{height:8px; background:#0d1119; border:1px solid var(--line); margin-bottom:14px;}
+.bar-fill{height:100%; background:linear-gradient(90deg, var(--ember), var(--gold)); width:0%; transition:width 1.2s ease;}
+
+/* ---------- SECTION SHELL ---------- */
+section{position:relative; z-index:1; padding:90px clamp(20px,5vw,64px);}
+.section-head{margin-bottom:48px;}
+.section-tag{
+  font-family:'Press Start 2P', monospace;
+  font-size:11px; color:var(--ember);
+  margin-bottom:14px; display:block;
+}
+.section-title{font-size:clamp(26px,4vw,38px); font-weight:700;}
+.section-sub{color:var(--muted); max-width:60ch; margin-top:10px; font-size:15px;}
+
+/* ---------- SKILLS / STAT SHEET ---------- */
+.stat-sheet{
+  background:var(--panel);
+  border:1px solid var(--line);
+  padding:clamp(24px,4vw,44px);
+  display:grid;
+  grid-template-columns:repeat(2, 1fr);
+  gap:28px 48px;
+}
+.skill-item .stat-row{color:var(--text); font-size:14px; font-weight:500;}
+.skill-item .stat-row span:last-child{color:var(--gold); font-family:'JetBrains Mono', monospace;}
+
+/* ---------- QUEST LOG (PROJECTS) ---------- */
+.quest-list{display:flex; flex-direction:column; gap:22px;}
+.quest-card{
+  background:var(--panel);
+  border:1px solid var(--line);
+  border-left:4px solid var(--gold-dim);
+  padding:28px clamp(20px,3vw,34px);
+  display:grid;
+  grid-template-columns:200px 1fr;
+  gap:24px;
+  transition:border-color .2s, transform .2s, background .2s;
+}
+.quest-card:hover{
+  border-left-color:var(--gold);
+  background:var(--panel-raised);
+  transform:translateX(4px);
+}
+.quest-card.main-quest{border-left-color:var(--ember);}
+.quest-card.main-quest:hover{border-left-color:var(--ember);}
+.quest-meta{display:flex; flex-direction:column; gap:10px;}
+.quest-type{
+  font-family:'JetBrains Mono', monospace;
+  font-size:11px; letter-spacing:.5px;
+  color:var(--muted);
+  text-transform:uppercase;
+}
+.quest-status{
+  display:inline-flex; align-items:center; gap:6px;
+  font-size:12px; color:var(--hp);
+  font-family:'JetBrains Mono', monospace;
+}
+.quest-status::before{content:"✓"; }
+.difficulty{display:flex; gap:4px;}
+.difficulty span{
+  width:9px; height:9px; background:var(--line); display:inline-block;
+}
+.difficulty span.on{background:var(--gold);}
+.quest-body h3{font-size:19px; margin-bottom:10px; font-weight:700;}
+.quest-body p{color:#c7cad4; font-size:14.5px;}
+.quest-body p + p{margin-top:8px;}
+
+/* ---------- LEVEL HISTORY (EDUCATION) ---------- */
+.timeline{position:relative; padding-left:34px;}
+.timeline::before{
+  content:""; position:absolute; left:6px; top:6px; bottom:6px;
+  width:2px; background:var(--line);
+}
+.tl-item{position:relative; padding-bottom:40px;}
+.tl-item:last-child{padding-bottom:0;}
+.tl-item::before{
+  content:""; position:absolute; left:-34px; top:2px;
+  width:14px; height:14px; background:var(--bg);
+  border:2px solid var(--gold); border-radius:50%;
+}
+.tl-level{font-family:'Press Start 2P', monospace; font-size:11px; color:var(--gold); margin-bottom:8px;}
+.tl-item h4{font-size:17px; margin-bottom:4px;}
+.tl-item .tl-sub{color:var(--muted); font-size:13.5px;}
+.tl-item .tl-status{
+  display:inline-block; margin-top:8px;
+  font-family:'JetBrains Mono', monospace; font-size:11px;
+  padding:3px 10px; border:1px solid var(--gold-dim); color:var(--gold);
+}
+
+/* ---------- CONTACT ---------- */
+.contact-wrap{
+  background:var(--panel);
+  border:1px solid var(--line);
+  padding:clamp(28px,5vw,56px);
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:40px;
+  align-items:center;
+}
+.contact-links{display:flex; flex-direction:column; gap:14px;}
+.contact-links a{
+  display:flex; align-items:center; gap:12px;
+  font-size:15px; color:var(--text);
+  padding:12px 16px;
+  border:1px solid var(--line);
+  transition:border-color .2s, color .2s, transform .2s;
+}
+.contact-links a:hover{border-color:var(--gold); color:var(--gold); transform:translateX(4px);}
+.contact-links .tag{
+  font-family:'JetBrains Mono', monospace; font-size:11px; color:var(--muted);
+  min-width:74px;
+}
+
+footer{
+  text-align:center; padding:32px 20px 40px;
+  color:var(--muted); font-size:12.5px;
+  font-family:'JetBrains Mono', monospace;
+  border-top:1px solid var(--line);
+  position:relative; z-index:1;
+}
+
+/* ---------- RESPONSIVE ---------- */
+@media (max-width:860px){
+  .hero-grid{grid-template-columns:1fr;}
+  .stat-sheet{grid-template-columns:1fr;}
+  .quest-card{grid-template-columns:1fr;}
+  .contact-wrap{grid-template-columns:1fr;}
+  .nav-links{
+    position:fixed; inset:64px 0 0 0; height:calc(100vh - 64px);
+    background:var(--bg); flex-direction:column; padding:32px;
+    transform:translateX(100%); transition:transform .25s ease;
+    font-size:18px;
+  }
+  .nav-links.open{transform:translateX(0);}
+  .nav-toggle{
+    display:block; background:none; border:1px solid var(--line);
+    color:var(--text); padding:8px 12px; font-size:18px; cursor:pointer;
+  }
+}
+
+@media (prefers-reduced-motion: reduce){
+  *{animation:none !important; transition:none !important;}
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="logo">Divyanshu<span>.dev</span></div>
+  <button class="nav-toggle" id="navToggle" aria-label="Toggle menu">☰</button>
+  <div class="nav-links" id="navLinks">
+    <a href="#home">Home</a>
+    <a href="#stats">Stat Sheet</a>
+    <a href="#quests">Quest Log</a>
+    <a href="#levels">Level History</a>
+    <a href="#contact">Contact</a>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero" id="home" style="padding-top:20px;">
+  <div class="hero-grid">
+    <div>
+      <div class="eyebrow">◉ TARGET ACQUIRED</div>
+      <h1>Divyanshu Giri<br><span class="accent">ships code</span> like it's a headshot.</h1>
+      <div class="role-line">CLASS: Front-End Dev // Python Automation // Game Designer</div>
+      <p class="hero-summary">
+        Creative web developer skilled in front-end coding, Python automation, and game design —
+        I build responsive apps, playable prototypes, and AI-assisted tools, then playtest them
+        until they don't break.
+      </p>
+      <div class="cta-row">
+        <a href="#quests" class="btn btn-primary">▶ VIEW MISSION LOG</a>
+        <a href="#contact" class="btn btn-ghost">SQUAD UP</a>
+      </div>
+      <div class="ammo-readout mono">LOADOUT: 05/05 SKILLS EQUIPPED &nbsp;|&nbsp; STATUS: AVAILABLE FOR HIRE</div>
+    </div>
+
+    <div class="char-card hud-corners">
+      <span class="hc-tr"></span><span class="hc-bl"></span>
+      <div class="avatar-frame">
+        <img src="ID photo.jpg" alt="Divyanshu Giri" class="avatar-photo">
+        <div class="reticle" aria-hidden="true">
+          <div class="reticle-line reticle-h"></div>
+          <div class="reticle-line reticle-v"></div>
+          <div class="reticle-ring"></div>
+        </div>
+        <span class="scope-tag mono">LOCKED ON</span>
+      </div>
+      <div class="char-name">Divyanshu Giri</div>
+      <div class="char-title">Neemuch, MP · B.Tech in Progress</div>
+
+      <div class="stat-row"><span>FRONT-END</span><span>92</span></div>
+      <div class="bar-track"><div class="bar-fill" data-fill="92"></div></div>
+
+      <div class="stat-row"><span>GAME DEV</span><span>85</span></div>
+      <div class="bar-track"><div class="bar-fill" data-fill="85"></div></div>
+
+      <div class="stat-row"><span>PYTHON / AUTOMATION</span><span>80</span></div>
+      <div class="bar-track"><div class="bar-fill" data-fill="80"></div></div>
+
+      <div class="stat-row"><span>DATA SCIENCE</span><span>60</span></div>
+      <div class="bar-track"><div class="bar-fill" data-fill="60"></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- STAT SHEET / SKILLS -->
+<section id="stats">
+  <div class="section-head">
+    <span class="section-tag">// LOADOUT</span>
+    <h2 class="section-title">Equipped Skills</h2>
+    <p class="section-sub">Everything currently locked, loaded, and ready to deploy on a project.</p>
+  </div>
+
+  <div class="stat-sheet hud-corners">
+    <span class="hc-tr"></span><span class="hc-bl"></span>
+    <div class="skill-item">
+      <div class="stat-row"><span>Web Design</span><span>EQUIPPED</span></div>
+    </div>
+    <div class="skill-item">
+      <div class="stat-row"><span>Front-End Coding (HTML/CSS/JS)</span><span>EQUIPPED</span></div>
+    </div>
+    <div class="skill-item">
+      <div class="stat-row"><span>Backend Tech</span><span>EQUIPPED</span></div>
+    </div>
+    <div class="skill-item">
+      <div class="stat-row"><span>Data Science</span><span>EQUIPPED</span></div>
+    </div>
+    <div class="skill-item">
+      <div class="stat-row"><span>Problem-Solving</span><span>EQUIPPED</span></div>
+    </div>
+    <div class="skill-item">
+      <div class="stat-row"><span>Computer Literacy</span><span>EQUIPPED</span></div>
+    </div>
+    <div class="skill-item">
+      <div class="stat-row"><span>Project Management Tools</span><span>EQUIPPED</span></div>
+    </div>
+    <div class="skill-item">
+      <div class="stat-row"><span>Video & Photo Editing</span><span>EQUIPPED</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- QUEST LOG / PROJECTS -->
+<section id="quests">
+  <div class="section-head">
+    <span class="section-tag">// MISSION LOG</span>
+    <h2 class="section-title">Completed Missions</h2>
+    <p class="section-sub">Five builds, ranked by threat level. The priority mission is marked in ember.</p>
+  </div>
+
+  <div class="quest-list">
+
+    <div class="quest-card main-quest">
+      <div class="quest-meta">
+        <span class="quest-type">Priority Mission · Game Dev</span>
+        <div class="difficulty">
+          <span class="on"></span><span class="on"></span><span class="on"></span><span class="on"></span><span class="on"></span>
+        </div>
+        <span class="quest-status">Mission Complete</span>
+      </div>
+      <div class="quest-body">
+        <h3>Fractured Archive: Last Loreweaver</h3>
+        <p>A survival-adventure game blending narrative-driven exploration with resource management.</p>
+        <p>Designed the world-building and core loop myself — this is the project that best shows how I think about systems and story together.</p>
+      </div>
+    </div>
+
+    <div class="quest-card">
+      <div class="quest-meta">
+        <span class="quest-type">Mission · AI / Data</span>
+        <div class="difficulty">
+          <span class="on"></span><span class="on"></span><span class="on"></span><span class="on"></span><span></span>
+        </div>
+        <span class="quest-status">Mission Complete</span>
+      </div>
+      <div class="quest-body">
+        <h3>CSV Doctor Integration</h3>
+        <p>A no-code AI analytics prototype that automates data cleaning and exploratory data analysis.</p>
+      </div>
+    </div>
+
+    <div class="quest-card">
+      <div class="quest-meta">
+        <span class="quest-type">Mission · Game Dev</span>
+        <div class="difficulty">
+          <span class="on"></span><span class="on"></span><span class="on"></span><span></span><span></span>
+        </div>
+        <span class="quest-status">Mission Complete</span>
+      </div>
+      <div class="quest-body">
+        <h3>Stack Man Game</h3>
+        <p>A PyGame-based interactive game with a full GUI and sound effects.</p>
+        <p>Built for gameplay feel first — a lot of the difficulty here was in the debugging, not the design.</p>
+      </div>
+    </div>
+
+    <div class="quest-card">
+      <div class="quest-meta">
+        <span class="quest-type">Mission · Web Dev</span>
+        <div class="difficulty">
+          <span class="on"></span><span class="on"></span><span class="on"></span><span></span><span></span>
+        </div>
+        <span class="quest-status">Mission Complete</span>
+      </div>
+      <div class="quest-body">
+        <h3>Multi-Feature Web Apps</h3>
+        <p>Converters, calculators, to-do lists, and tribute pages built during internships, with an emphasis on responsive UI/UX in HTML, CSS, and JavaScript.</p>
+      </div>
+    </div>
+
+    <div class="quest-card">
+      <div class="quest-meta">
+        <span class="quest-type">Mission · Automation</span>
+        <div class="difficulty">
+          <span class="on"></span><span class="on"></span><span></span><span></span><span></span>
+        </div>
+        <span class="quest-status">Mission Complete</span>
+      </div>
+      <div class="quest-body">
+        <h3>PyCode-Macker</h3>
+        <p>A repository of Python-based utilities and automation scripts, built around clean, modular coding practices.</p>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- LEVEL HISTORY / EDUCATION -->
+<section id="levels">
+  <div class="section-head">
+    <span class="section-tag">// SERVICE RECORD</span>
+    <h2 class="section-title">Deployment History</h2>
+    <p class="section-sub">How this operative got here.</p>
+  </div>
+
+  <div class="timeline">
+    <div class="tl-item">
+      <div class="tl-level">BASIC TRAINING</div>
+      <h4>School, KVS Neemuch, MP</h4>
+      <div class="tl-sub">Grades 10th–12th</div>
+      <span class="tl-status">Cleared</span>
+    </div>
+    <div class="tl-item">
+      <div class="tl-level">ACTIVE DEPLOYMENT</div>
+      <h4>Bachelor of Technology — Mewar University</h4>
+      <div class="tl-sub">2023 – 2027</div>
+      <span class="tl-status">In Progress</span>
+    </div>
+  </div>
+</section>
+
+<!-- CONTACT -->
+<section id="contact">
+  <div class="section-head">
+    <span class="section-tag">// OPEN COMMS</span>
+    <h2 class="section-title">Send a Squad Invite</h2>
+    <p class="section-sub">Open to freelance work in web development, front-end builds, and game prototypes.</p>
+  </div>
+
+  <div class="contact-wrap hud-corners">
+    <span class="hc-tr"></span><span class="hc-bl"></span>
+    <div>
+      <p style="color:#c7cad4; font-size:15px; margin-bottom:10px;">
+        Have a build in mind? Send an invite — I usually reply within a day.
+      </p>
+      <p style="color:var(--muted); font-size:13px;">Based in Neemuch, Madhya Pradesh, India.</p>
+    </div>
+    <div class="contact-links">
+      <a href="mailto:divyanshusk0405@gmail.com"><span class="tag">EMAIL</span> divyanshusk0405@gmail.com</a>
+      <a href="tel:+919630696585"><span class="tag">PHONE</span> +91-9630696585</a>
+      <a href="https://www.linkedin.com/in/giri0405" target="_blank" rel="noopener"><span class="tag">LINKEDIN</span> linkedin.com/in/giri0405</a>
+      <a href="https://github.com/giri0405" target="_blank" rel="noopener"><span class="tag">GITHUB</span> github.com/giri0405</a>
+    </div>
+  </div>
+</section>
+
+<footer>
+  © 2026 DIVYANSHU GIRI — TRANSMISSION END. BUILT WITH HTML, CSS & PERSISTENCE IN DEBUGGING.
+</footer>
+
+<script>
+// mobile nav toggle
+const navToggle = document.getElementById('navToggle');
+const navLinks = document.getElementById('navLinks');
+navToggle.addEventListener('click', () => navLinks.classList.toggle('open'));
+navLinks.querySelectorAll('a').forEach(a => a.addEventListener('click', () => navLinks.classList.remove('open')));
+
+// animate stat bars on scroll into view
+const bars = document.querySelectorAll('.bar-fill');
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if(entry.isIntersecting){
+      const fill = entry.target.getAttribute('data-fill');
+      entry.target.style.width = fill + '%';
+      observer.unobserve(entry.target);
+    }
+  });
+}, {threshold:0.4});
+bars.forEach(b => observer.observe(b));
+</script>
+</body>
+</html>
